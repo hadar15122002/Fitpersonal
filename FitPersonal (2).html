@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitPersonal — תוכנית כושר ותזונה אישית</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0A0F;--surface:#12121A;--card:#1A1A26;--border:#2A2A3E;
+  --accent:#C8F135;--accent-soft:rgba(200,241,53,0.12);--accent-dim:#8FAD1F;
+  --text:#F0F0F8;--muted:#7A7A9A;--danger:#FF5C5C;--info:#5CC8FF;--green:#5AFFA0;
+  --orange:#FF9F5C;--gradient:linear-gradient(135deg,#C8F135 0%,#5AFFA0 100%);
+}
+body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden}
+button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:'Heebo',sans-serif;outline:none}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;padding-bottom:100px}
+.screen.active{display:block}
+
+/* TOP BAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.topbar-logo{font-weight:900;font-size:18px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;
+  justify-content:center;border:1px solid var(--accent);font-size:14px;color:var(--accent);font-weight:700}
+.edit-btn{background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer}
+
+/* CONTENT */
+.content{padding:20px;max-width:520px;margin:0 auto}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(18,18,26,0.96);backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);display:flex;padding:12px 20px 20px}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border:none;cursor:pointer}
+.nav-icon{font-size:22px;filter:grayscale(1) opacity(.5);transition:filter .2s}
+.nav-label{font-size:11px;font-weight:700;color:var(--muted);transition:color .2s}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);display:none}
+.nav-btn.active .nav-icon{filter:none}
+.nav-btn.active .nav-label{color:var(--accent)}
+.nav-btn.active .nav-dot{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:20px;padding:20px;border:1px solid var(--border);margin-bottom:16px}
+.card-sm{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+
+/* PROGRESS BAR */
+.progress-wrap{background:var(--border);border-radius:99px;height:6px;overflow:hidden}
+.progress-bar{height:100%;border-radius:99px;transition:width .5s ease}
+
+/* TAGS */
+.tag{padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block}
+
+/* TOGGLE */
+.toggle-wrap{display:flex;justify-content:space-between;align-items:center;padding:16px;
+  border-radius:14px;border:2px solid var(--border);background:var(--card);cursor:pointer;margin-bottom:14px;transition:all .2s}
+.toggle-track{width:44px;height:26px;border-radius:99px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle-wrap.on .toggle-track{background:var(--accent)}
+.toggle-wrap.on .toggle-thumb{left:21px}
+
+/* ===== ONBOARDING ===== */
+#onboarding{background:var(--bg)}
+.ob-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.ob-card{width:100%;max-width:420px;background:var(--surface);border-radius:24px;padding:28px;border:1px solid var(--border)}
+.ob-progress-label{display:flex;justify-content:space-between;margin-bottom:8px}
+.ob-step{display:none}
+.ob-step.active{display:block}
+.ob-title{color:var(--text);margin-bottom:8px;font-size:20px;font-weight:800}
+.ob-sub{color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.6}
+.ob-input{width:100%;padding:14px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);
+  color:var(--text);font-size:16px;text-align:right;transition:border-color .2s;margin-bottom:14px}
+.ob-input:focus{border-color:var(--accent)}
+.ob-textarea{width:100%;padding:14px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);
+  color:var(--text);font-size:14px;text-align:right;resize:none;margin-bottom:16px;line-height:1.6}
+.ob-textarea:focus{border-color:var(--accent)}
+.gender-row{display:flex;gap:12px;margin-bottom:14px}
+.gender-btn{flex:1;padding:16px;border-radius:14px;border:2px solid var(--border);background:transparent;
+  color:var(--muted);font-size:15px;font-weight:700;transition:all .2s}
+.gender-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.option-card{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:14px;margin-bottom:10px;
+  border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s}
+.option-card.sel{border-color:var(--accent);background:var(--accent-soft)}
+.option-card.sel .option-title{color:var(--accent)}
+.option-icon{font-size:28px;flex-shrink:0}
+.option-title{color:var(--text);font-weight:700;font-size:15px}
+.option-desc{color:var(--muted);font-size:13px}
+.goals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.goal-btn{padding:14px 10px;border-radius:14px;border:2px solid var(--border);background:var(--card);
+  color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;text-align:center;transition:all .2s}
+.goal-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.goal-icon{font-size:22px;display:block;margin-bottom:4px}
+.time-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.time-btn{padding:10px 16px;border-radius:10px;border:2px solid var(--border);background:transparent;
+  color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.time-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.diet-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;margin-bottom:10px;
+  border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s}
+.diet-card.sel{border-color:var(--accent);background:var(--accent-soft)}
+.diet-card.sel .diet-title{color:var(--accent)}
+.diet-title{color:var(--text);font-weight:700;font-size:15px}
+.diet-desc{color:var(--muted);font-size:13px}
+.diet-check{margin-right:auto;color:var(--accent);font-size:18px;display:none}
+.diet-card.sel .diet-check{display:block}
+.ob-btns{display:flex;gap:12px;margin-top:28px}
+.ob-back{flex:0.4;padding:14px 0;border-radius:14px;border:2px solid var(--border);background:transparent;
+  color:var(--muted);font-size:16px;font-weight:700}
+.ob-next{flex:1;padding:14px 0;border-radius:14px;border:none;background:var(--accent);
+  color:var(--bg);font-size:16px;font-weight:800;transition:all .2s}
+.ob-next:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.welcome-icon{font-size:64px;text-align:center;margin-bottom:16px}
+.welcome-title{font-size:32px;font-weight:900;background:var(--gradient);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;text-align:center;margin-bottom:12px}
+.welcome-sub{color:var(--muted);font-size:16px;line-height:1.7;text-align:center;margin-bottom:32px}
+
+/* ===== HOME TAB ===== */
+.hero-card{background:linear-gradient(135deg,var(--surface),var(--card));border-radius:24px;padding:24px;
+  margin-bottom:16px;border:1px solid var(--border);position:relative;overflow:hidden}
+.hero-blob{position:absolute;top:-30px;left:-30px;width:150px;height:150px;border-radius:50%;background:var(--accent-soft)}
+.hero-greet{color:var(--muted);font-size:14px;margin-bottom:4px;position:relative}
+.hero-name{color:var(--text);font-size:26px;font-weight:900;margin-bottom:16px;position:relative}
+.stats-row{display:flex;gap:12px;position:relative}
+.stat-box{flex:1;border-radius:14px;padding:14px}
+.stat-val{font-size:22px;font-weight:800;margin-bottom:2px}
+.stat-lbl{font-size:12px;color:var(--muted)}
+.week-grid{display:flex;gap:6px;margin-bottom:8px}
+.week-day{flex:1;aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.week-day.done{background:var(--accent);border-color:var(--accent)}
+.week-day-lbl{font-size:10px;font-weight:700;color:var(--muted)}
+.week-day.done .week-day-lbl{color:var(--bg)}
+.week-day-check{font-size:14px;display:none}
+.week-day.done .week-day-check{display:block}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.quick-btn{padding:18px 14px;border-radius:16px;border:1px solid var(--border);font-size:15px;font-weight:700;text-align:center;transition:all .2s}
+.goals-tags{display:flex;gap:8px;flex-wrap:wrap}
+.goal-tag{padding:6px 14px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600}
+
+/* WATER TRACKER */
+.water-cups{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.water-cup{width:36px;height:36px;border-radius:8px;border:2px solid var(--border);background:transparent;
+  cursor:pointer;font-size:16px;transition:all .2s}
+.water-cup.filled{border-color:var(--info);background:rgba(92,200,255,0.15)}
+
+/* ===== WORKOUT TAB ===== */
+.pregnancy-banner{background:rgba(255,159,92,0.1);border-radius:18px;padding:18px;margin-bottom:16px;border:2px solid rgba(255,159,92,0.4)}
+.pregnancy-banner-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pregnancy-banner-title span:first-child{font-size:24px}
+.pregnancy-banner-title span:last-child{color:var(--orange);font-weight:800;font-size:16px}
+.pregnancy-text{color:var(--orange);font-size:13px;line-height:1.6;margin-bottom:12px}
+.pregnancy-warnings{border-top:1px solid rgba(255,159,92,0.25);padding-top:10px}
+.pregnancy-warning{font-size:12px;font-weight:600;margin-bottom:4px}
+.pregnancy-warning.no{color:#FF7070}
+.pregnancy-warning.caution{color:var(--orange)}
+.workout-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.workout-timer{color:var(--accent);font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.start-btn{width:100%;padding:14px 0;border-radius:14px;font-size:16px;font-weight:800;transition:all .2s}
+.chips-row{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.chip{padding:8px 16px;border-radius:99px;background:var(--card);color:var(--muted);font-size:13px;
+  font-weight:600;white-space:nowrap;border:1px solid var(--border)}
+.ex-card{background:var(--card);border-radius:20px;padding:20px;border:1px solid var(--border);margin-bottom:14px;transition:all .3s;position:relative;overflow:hidden}
+.ex-card.done{opacity:0.7;border-color:var(--accent)}
+.ex-done-overlay{position:absolute;inset:0;background:rgba(200,241,53,0.05);border-radius:20px;display:none}
+.ex-card.done .ex-done-overlay{display:block}
+.ex-tip{border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:12px;font-weight:700;line-height:1.5}
+.ex-tip.safe{background:rgba(90,255,160,0.08);border:1px solid rgba(90,255,160,0.35);color:var(--green)}
+.ex-tip.caution{background:rgba(255,159,92,0.12);border:1px solid rgba(255,159,92,0.5);color:var(--orange)}
+.ex-body{display:flex;align-items:flex-start;gap:16px}
+.ex-emoji{width:80px;height:80px;border-radius:16px;background:var(--accent-soft);display:flex;align-items:center;
+  justify-content:center;font-size:36px;flex-shrink:0;border:1px solid var(--border)}
+.ex-emoji.pregnancy-style{background:rgba(90,255,160,0.08);border-color:rgba(90,255,160,0.25)}
+.ex-info{flex:1}
+.ex-name-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.ex-name{font-size:17px;font-weight:700;color:var(--text)}
+.ex-diff{font-size:11px;padding:3px 8px;border-radius:99px;font-weight:600}
+.ex-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.ex-meta{display:flex;gap:12px}
+.ex-meta span{font-size:12px;font-weight:600}
+.ex-btns{display:flex;gap:10px;margin-top:16px}
+.ex-rest-btn{flex:1;padding:10px 0;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600}
+.ex-done-btn{flex:1;padding:10px 0;border-radius:12px;border:none;font-size:13px;font-weight:700;transition:all .2s}
+.rest-timer{text-align:center;padding:24px}
+.rest-time{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;font-weight:700;color:var(--accent)}
+.medical-banner{background:rgba(255,92,92,0.1);border-radius:16px;padding:16px;margin-top:12px;border:2px solid rgba(255,92,92,0.2)}
+.medical-text{color:var(--danger);font-size:14px;font-weight:600}
+
+/* ===== NUTRITION TAB ===== */
+.calorie-ring-wrap{text-align:center;margin-bottom:16px}
+.calorie-ring{position:relative;width:140px;height:140px;margin:0 auto 16px}
+.calorie-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.calorie-val{color:var(--accent);font-size:26px;font-weight:900}
+.calorie-sub{color:var(--muted);font-size:11px}
+.macro-row{display:flex;justify-content:center;gap:24px}
+.macro-val{color:var(--text);font-weight:700;font-size:15px}
+.macro-lbl{color:var(--muted);font-size:12px}
+.meal-card{display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;margin-bottom:10px;
+  border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s}
+.meal-card.eaten{border-color:var(--accent);background:var(--accent-soft)}
+.meal-icon{width:48px;height:48px;border-radius:12px;background:var(--surface);display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0}
+.meal-info{flex:1}
+.meal-name-row{display:flex;justify-content:space-between;margin-bottom:3px}
+.meal-name{color:var(--text);font-weight:700;font-size:15px}
+.meal-time{color:var(--muted);font-size:12px}
+.meal-foods{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:3px}
+.meal-cal{color:var(--accent);font-size:12px;font-weight:600}
+.meal-check{color:var(--accent);font-size:20px;display:none}
+.meal-card.eaten .meal-check{display:block}
+
+/* ===== PROGRESS TAB ===== */
+.weight-row{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.weight-btn{width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:20px;cursor:pointer}
+.weight-display{flex:1;text-align:center}
+.weight-val{color:var(--accent);font-size:36px;font-weight:900}
+.weight-sub{color:var(--muted);font-size:13px}
+.weight-boxes{display:flex;gap:12px}
+.weight-box{flex:1;background:var(--surface);border-radius:12px;padding:12px;text-align:center}
+.weight-box-val{font-weight:700;font-size:18px;margin-bottom:2px}
+.weight-box-lbl{color:var(--muted);font-size:12px}
+.perf-bar{margin-bottom:16px}
+.perf-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.perf-label{color:var(--text);font-size:14px}
+.perf-pct{font-weight:700;font-size:14px}
+.achieve-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.achieve-card{padding:14px;border-radius:14px;text-align:center;border:1px solid var(--border);background:var(--surface)}
+.achieve-card.done{background:var(--accent-soft);border-color:var(--accent)}
+.achieve-icon{font-size:28px;margin-bottom:6px}
+.achieve-title{font-size:12px;font-weight:600;color:var(--muted)}
+.achieve-card.done .achieve-title{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ===== ONBOARDING ===== -->
+<div id="onboarding" class="screen active">
+<div class="ob-wrap">
+  <div style="width:100%;max-width:420px;margin-bottom:24px">
+    <div class="ob-progress-label">
+      <span style="color:var(--muted);font-size:12px" id="step-label">שלב 1 מתוך 6</span>
+      <span style="color:var(--accent);font-size:12px;font-weight:700" id="step-pct">17%</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="ob-progress" style="width:17%;background:var(--accent)"></div></div>
+  </div>
+  <div class="ob-card">
+    <!-- Step 0 -->
+    <div class="ob-step active" id="step-0">
+      <div class="welcome-icon">🔥</div>
+      <div class="welcome-title">FitPersonal</div>
+      <div class="welcome-sub">תוכנית הכושר והתזונה<br>המותאמת אישית רק לך</div>
+      <input class="ob-input" id="inp-name" placeholder="מה שמך?" oninput="checkStep(0)">
+    </div>
+    <!-- Step 1 -->
+    <div class="ob-step" id="step-1">
+      <div class="ob-title">נתונים בסיסיים</div>
+      <div class="gender-row">
+        <button class="gender-btn" onclick="selectGender('female',this)">👩 נקבה</button>
+        <button class="gender-btn" onclick="selectGender('male',this)">👨 זכר</button>
+      </div>
+      <input class="ob-input" id="inp-age" type="number" placeholder="גיל" oninput="checkStep(1)">
+      <input class="ob-input" id="inp-height" type="number" placeholder='גובה (ס"מ)' oninput="checkStep(1)">
+      <input class="ob-input" id="inp-weight" type="number" placeholder='משקל (ק"ג)' oninput="checkStep(1)">
+    </div>
+    <!-- Step 2 -->
+    <div class="ob-step" id="step-2">
+      <div class="ob-title">רמת הכושר שלך</div>
+      <div class="ob-sub">כנה עם עצמך — זה יעזור לנו להתאים נכון</div>
+      <div class="option-card" onclick="selectFitness('beginner',this)">
+        <span class="option-icon">🌱</span>
+        <div><div class="option-title">מתחיל/ה</div><div class="option-desc">לא מתאמן/ת כרגע</div></div>
+      </div>
+      <div class="option-card" onclick="selectFitness('intermediate',this)">
+        <span class="option-icon">🌿</span>
+        <div><div class="option-title">בינוני/ת</div><div class="option-desc">1-3 פעמים בשבוע</div></div>
+      </div>
+      <div class="option-card" onclick="selectFitness('advanced',this)">
+        <span class="option-icon">🌳</span>
+        <div><div class="option-title">מתקדם/ת</div><div class="option-desc">4+ פעמים בשבוע</div></div>
+      </div>
+    </div>
+    <!-- Step 3 -->
+    <div class="ob-step" id="step-3">
+      <div class="ob-title">המטרות שלך</div>
+      <div class="ob-sub">בחר/י עד 3 מטרות עיקריות</div>
+      <div class="goals-grid">
+        <button class="goal-btn" onclick="toggleGoal('abs',this)"><span class="goal-icon">◈</span>קוביות בבטן</button>
+        <button class="goal-btn" onclick="toggleGoal('vline',this)"><span class="goal-icon">▽</span>קו V</button>
+        <button class="goal-btn" onclick="toggleGoal('glutes',this)"><span class="goal-icon">⬟</span>ישבן מודגש</button>
+        <button class="goal-btn" onclick="toggleGoal('legs',this)"><span class="goal-icon">⟡</span>רגליים חטובות</button>
+        <button class="goal-btn" onclick="toggleGoal('weightloss',this)"><span class="goal-icon">↓</span>ירידה במשקל</button>
+        <button class="goal-btn" onclick="toggleGoal('strength',this)"><span class="goal-icon">◉</span>חיזוק הגוף</button>
+        <button class="goal-btn" onclick="toggleGoal('flexibility',this)"><span class="goal-icon">∿</span>גמישות</button>
+        <button class="goal-btn" onclick="toggleGoal('muscle',this)"><span class="goal-icon">▲</span>עלייה במסת שריר</button>
+      </div>
+    </div>
+    <!-- Step 4 -->
+    <div class="ob-step" id="step-4">
+      <div class="ob-title">מגבלות ולו"ז</div>
+      <textarea class="ob-textarea" id="inp-medical" rows="3" placeholder="מגבלות רפואיות / פציעות (לדוגמה: כאבי גב, ללא מגבלות...)"></textarea>
+      <div class="toggle-wrap" id="toggle-pregnant" onclick="togglePregnant()">
+        <span style="color:var(--text)">🤰 בהריון</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="ob-sub" style="margin-bottom:12px">כמה פעמים בשבוע?</div>
+      <div class="time-row">
+        <button class="time-btn" onclick="selectTime('2-3 פעמים',this)">2-3 פעמים</button>
+        <button class="time-btn" onclick="selectTime('3-4 פעמים',this)">3-4 פעמים</button>
+        <button class="time-btn" onclick="selectTime('4-5 פעמים',this)">4-5 פעמים</button>
+        <button class="time-btn" onclick="selectTime('כל יום',this)">כל יום</button>
+      </div>
+      <div class="toggle-wrap" id="toggle-equip" onclick="toggleEquip()">
+        <span style="color:var(--text)">🏠 יש ציוד ספורט בבית</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      </div>
+    </div>
+    <!-- Step 5 -->
+    <div class="ob-step" id="step-5">
+      <div class="ob-title">הרגלי תזונה</div>
+      <div class="ob-sub">כדי שנוכל לבנות תפריט מותאם</div>
+      <div class="diet-card" onclick="selectDiet('regular',this)">
+        <div><div class="diet-title">📋 תזונה רגילה</div><div class="diet-desc">אוכל/ת הכל</div></div>
+        <span class="diet-check">✓</span>
+      </div>
+      <div class="diet-card" onclick="selectDiet('vegetarian',this)">
+        <div><div class="diet-title">🥦 צמחוני/ת</div><div class="diet-desc">ללא בשר</div></div>
+        <span class="diet-check">✓</span>
+      </div>
+      <div class="diet-card" onclick="selectDiet('vegan',this)">
+        <div><div class="diet-title">🌱 טבעוני/ת</div><div class="diet-desc">ללא כל מוצרי בעלי חיים</div></div>
+        <span class="diet-check">✓</span>
+      </div>
+      <div class="diet-card" onclick="selectDiet('glutenfree',this)">
+        <div><div class="diet-title">🌾 ללא גלוטן</div><div class="diet-desc">רגישות לגלוטן</div></div>
+        <span class="diet-check">✓</span>
+      </div>
+      <div class="diet-card" onclick="selectDiet('lowcarb',this)">
+        <div><div class="diet-title">🥑 דל פחמימות</div><div class="diet-desc">קטו / פליאו</div></div>
+        <span class="diet-check">✓</span>
+      </div>
+    </div>
+    <!-- Buttons -->
+    <div class="ob-btns">
+      <button class="ob-back" id="ob-back" style="display:none" onclick="prevStep()">← חזור</button>
+      <button class="ob-next" id="ob-next" onclick="nextStep()" disabled>המשך ←</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app" class="screen">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">FitPersonal</div>
+    <div class="topbar-right">
+      <div class="avatar" id="top-avatar">ה</div>
+      <button class="edit-btn" onclick="resetApp()">✎ ערוך פרופיל</button>
+    </div>
+  </div>
+
+  <!-- HOME TAB -->
+  <div id="tab-home" class="screen active" style="min-height:auto">
+  <div class="content">
+    <div class="hero-card">
+      <div class="hero-blob"></div>
+      <div class="hero-greet">בוקר טוב,</div>
+      <div class="hero-name" id="hero-name">שלום 👋</div>
+      <div class="stats-row">
+        <div class="stat-box" style="background:var(--accent-soft);border:1px solid rgba(200,241,53,0.2)">
+          <div class="stat-val" style="color:var(--accent)" id="stat-exercises">3</div>
+          <div class="stat-lbl">תרגילים היום</div>
+        </div>
+        <div class="stat-box" style="background:rgba(92,200,255,0.1);border:1px solid rgba(92,200,255,0.2)">
+          <div class="stat-val" style="color:var(--info)" id="stat-calories">1800</div>
+          <div class="stat-lbl">יעד קלוריות</div>
+        </div>
+        <div class="stat-box" style="background:rgba(90,255,160,0.1);border:1px solid rgba(90,255,160,0.2)">
+          <div class="stat-val" style="color:var(--green)" id="stat-workouts">3</div>
+          <div class="stat-lbl">אימונים/שבוע</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+        <span style="font-weight:700;color:var(--text)">מעקב שבועי</span>
+        <span style="color:var(--muted);font-size:12px" id="week-count">2 / 7 אימונים</span>
+      </div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+    <div class="quick-grid">
+      <button class="quick-btn" style="background:var(--accent);color:var(--bg)" onclick="showTab('workout')">🏃 התחל אימון</button>
+      <button class="quick-btn" style="background:var(--card);color:var(--text)" onclick="showTab('nutrition')">🥗 תפריט יומי</button>
+      <button class="quick-btn" style="background:var(--card);color:var(--text)" onclick="showTab('progress')">📊 ההתקדמות</button>
+      <button class="quick-btn" style="background:var(--card);color:var(--text)">⚙️ הגדרות</button>
+    </div>
+    <div class="card" id="water-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <span style="font-weight:600;color:var(--text)">💧 מים</span>
+        <span style="color:var(--info);font-weight:700" id="water-label">3/8 כוסות</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="water-bar" style="width:37.5%;background:var(--info)"></div></div>
+      <div class="water-cups" id="water-cups"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;color:var(--text);margin-bottom:12px">המטרות שלך</div>
+      <div class="goals-tags" id="home-goals"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- WORKOUT TAB -->
+  <div id="tab-workout" class="screen" style="min-height:auto;display:none">
+  <div class="content">
+    <div id="pregnancy-banner" style="display:none" class="pregnancy-banner">
+      <div class="pregnancy-banner-title"><span>🤰</span><span>תוכנית אימון מותאמת להריון</span></div>
+      <div class="pregnancy-text">כל התרגילים נבחרו בהתאם להנחיות רפואיות. חשוב להתייעץ עם הרופאה/מיילדת לפני תחילת כל תוכנית.</div>
+      <div class="pregnancy-warnings">
+        <div class="pregnancy-warning no">❌ אין לבצע: תרגילים על הגב לאחר שבוע 20</div>
+        <div class="pregnancy-warning no">❌ אין לבצע: קפיצות ותנועות חדות</div>
+        <div class="pregnancy-warning no">❌ אין לבצע: תרגילי בטן ישירים</div>
+        <div class="pregnancy-warning no">❌ אין לבצע: מאמץ גבוה הגורם לקוצר נשימה</div>
+        <div class="pregnancy-warning caution">⚠️ הפסיקי ופני לרופאה אם: כאב, דימום או סחרחורת</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="workout-header">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:var(--text)">אימון היום</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px" id="workout-subtitle">חיטוב כללי • 3 תרגילים</div>
+        </div>
+        <div class="workout-timer" id="workout-timer" style="display:none">00:00</div>
+      </div>
+      <button class="start-btn" id="start-btn" style="background:var(--accent);color:var(--bg)" onclick="toggleWorkout()">▶ התחל אימון</button>
+    </div>
+    <div class="chips-row" id="workout-chips"></div>
+    <div id="exercises-list"></div>
+    <div id="medical-banner" style="display:none" class="medical-banner">
+      <div class="medical-text" id="medical-text"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- NUTRITION TAB -->
+  <div id="tab-nutrition" class="screen" style="min-height:auto;display:none">
+  <div class="content">
+    <div class="card calorie-ring-wrap">
+      <div class="calorie-ring">
+        <svg viewBox="0 0 140 140" style="width:140px;height:140px">
+          <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="12"/>
+          <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent)" stroke-width="12"
+            stroke-dasharray="0 364" stroke-linecap="round" transform="rotate(-90 70 70)"
+            id="calorie-circle" style="transition:stroke-dasharray .5s ease"/>
+        </svg>
+        <div class="calorie-center">
+          <div class="calorie-val" id="calorie-consumed">0</div>
+          <div class="calorie-sub" id="calorie-target-lbl">מתוך 1800</div>
+        </div>
+      </div>
+      <div class="macro-row">
+        <div style="text-align:center"><div class="macro-val">95 גר׳</div><div class="macro-lbl">🥩 חלבון</div></div>
+        <div style="text-align:center"><div class="macro-val">180 גר׳</div><div class="macro-lbl">🍞 פחמימות</div></div>
+        <div style="text-align:center"><div class="macro-val">55 גר׳</div><div class="macro-lbl">🥑 שומן</div></div>
+      </div>
+    </div>
+    <div class="card" id="nutrition-water"></div>
+    <div style="font-weight:700;color:var(--text);margin-bottom:12px">ארוחות היום</div>
+    <div id="meals-list"></div>
+  </div>
+  </div>
+
+  <!-- PROGRESS TAB -->
+  <div id="tab-progress" class="screen" style="min-height:auto;display:none">
+  <div class="content">
+    <div class="card">
+      <div style="font-weight:700;color:var(--text);margin-bottom:16px">📊 מעקב משקל</div>
+      <div class="weight-row">
+        <button class="weight-btn" onclick="changeWeight(-0.5)">-</button>
+        <div class="weight-display">
+          <div class="weight-val" id="prog-weight">65</div>
+          <div class="weight-sub">ק"ג כרגע</div>
+        </div>
+        <button class="weight-btn" onclick="changeWeight(0.5)">+</button>
+      </div>
+      <div class="weight-boxes">
+        <div class="weight-box"><div class="weight-box-val" id="start-weight" style="color:var(--text)">65</div><div class="weight-box-lbl">משקל ראשוני</div></div>
+        <div class="weight-box"><div class="weight-box-val" id="goal-weight" style="color:var(--accent)">60</div><div class="weight-box-lbl">יעד משקל</div></div>
+        <div class="weight-box"><div class="weight-box-val" id="diff-weight" style="color:var(--green)">0</div><div class="weight-box-lbl">שינוי</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;color:var(--text);margin-bottom:16px">ביצועים השבוע</div>
+      <div class="perf-bar"><div class="perf-row"><span class="perf-label">שריפת קלוריות</span><span class="perf-pct" style="color:var(--accent)">68%</span></div><div class="progress-wrap"><div class="progress-bar" style="width:68%;background:var(--accent)"></div></div></div>
+      <div class="perf-bar"><div class="perf-row"><span class="perf-label">עמידה ביעד מים</span><span class="perf-pct" style="color:var(--info)">75%</span></div><div class="progress-wrap"><div class="progress-bar" style="width:75%;background:var(--info)"></div></div></div>
+      <div class="perf-bar" id="perf-workouts"><div class="perf-row"><span class="perf-label">אימונים שהושלמו</span><span class="perf-pct" style="color:var(--green)" id="perf-workouts-pct">29%</span></div><div class="progress-wrap"><div class="progress-bar" id="perf-workouts-bar" style="width:29%;background:var(--green)"></div></div></div>
+      <div class="perf-bar"><div class="perf-row"><span class="perf-label">ציות לתפריט</span><span class="perf-pct" style="color:var(--orange)">55%</span></div><div class="progress-wrap"><div class="progress-bar" style="width:55%;background:var(--orange)"></div></div></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;color:var(--text);margin-bottom:14px">🏆 הישגים</div>
+      <div class="achieve-grid">
+        <div class="achieve-card done"><div class="achieve-icon">🔥</div><div class="achieve-title">רצף 3 ימים</div></div>
+        <div class="achieve-card done"><div class="achieve-icon">💧</div><div class="achieve-title">8 כוסות ביום</div></div>
+        <div class="achieve-card"><div class="achieve-icon">💪</div><div class="achieve-title">10 אימונים</div></div>
+        <div class="achieve-card"><div class="achieve-icon">⚖️</div><div class="achieve-title">הפחתת 2 ק"ג</div></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showTab('home')">
+      <span class="nav-icon">⌂</span><span class="nav-label">ראשי</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" id="nav-workout" onclick="showTab('workout')">
+      <span class="nav-icon">💪</span><span class="nav-label">אימון</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" id="nav-nutrition" onclick="showTab('nutrition')">
+      <span class="nav-icon">🥗</span><span class="nav-label">תזונה</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" id="nav-progress" onclick="showTab('progress')">
+      <span class="nav-icon">📈</span><span class="nav-label">התקדמות</span><div class="nav-dot"></div>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const GOALS_MAP = {abs:'קוביות בבטן',vline:'קו V',glutes:'ישבן מודגש',legs:'רגליים חטובות',
+  weightloss:'ירידה במשקל',strength:'חיזוק הגוף',flexibility:'גמישות',muscle:'עלייה במסת שריר'};
+
+const EXERCISES = {
+  abs:[
+    {name:'פלאנק',sets:3,reps:'45 שניות',muscle:'בטן',diff:'בינוני',desc:'שכבי עם משקל על קצות האצבעות ואמות הידיים, שמרי על הגב ישר.',emoji:'🏋️'},
+    {name:'קראנצ\'ים',sets:3,reps:'20',muscle:'בטן עליונה',diff:'קל',desc:'שכבי על הגב, כפות הידיים מאחורי הראש, הרמי את הכתפיים.',emoji:'🤸'},
+    {name:'רגליים למעלה-מטה',sets:3,reps:'15',muscle:'בטן תחתונה',diff:'קשה',desc:'שכבי על הגב, ידיים לצדדים, הרמי את הרגליים למאונך ורדי לאט.',emoji:'💪'},
+  ],
+  glutes:[
+    {name:'סקוואט',sets:4,reps:'15',muscle:'ישבן + ירכיים',diff:'בינוני',desc:'עמדי ברגליים ברוחב כתפיים, כרעי כאילו יושבת על כיסא.',emoji:'🏋️'},
+    {name:'היפ ת\'ראסט',sets:3,reps:'12',muscle:'ישבן',diff:'בינוני',desc:'שכבי עם הגב על ספסל, דחפי את האגן למעלה.',emoji:'🤸'},
+    {name:'לאנג\'ים',sets:3,reps:'10 לכל רגל',muscle:'ישבן + קדמיות',diff:'בינוני',desc:'צעדי קדימה, כרעי עד שהברך האחורית כמעט נוגעת בקרקע.',emoji:'💪'},
+  ],
+  weightloss:[
+    {name:'ג\'אמפינג ג\'קס',sets:4,reps:'30 שניות',muscle:'כל הגוף',diff:'קל',desc:'קפצי תוך כדי פרישת ידיים ורגליים הצידה וחזרה.',emoji:'🔥'},
+    {name:'ברפי',sets:3,reps:'10',muscle:'כל הגוף',diff:'קשה',desc:'סקוואט → פלאנק → שכיבת סמיכה → קפיצה.',emoji:'⚡'},
+    {name:'הליכה גבוהה',sets:3,reps:'45 שניות',muscle:'ירכיים + בטן',diff:'קל',desc:'הרמי ברכיים לגובה הירך בקצב מהיר במקום.',emoji:'🏃'},
+  ],
+  strength:[
+    {name:'שכיבות סמיכה',sets:4,reps:'12',muscle:'חזה + כתפיים',diff:'בינוני',desc:'ידיים ברוחב כתפיים, שמרי על הגב ישר, רדי עד לחזה.',emoji:'💪'},
+    {name:'מתח',sets:3,reps:'6-8',muscle:'גב + ביצפס',diff:'קשה',desc:'תפסי מוט ברוחב כתפיים, משכי את הגוף למעלה עד לסנטר.',emoji:'🏋️'},
+    {name:'סקוואט עם משקל',sets:4,reps:'10',muscle:'רגליים + ישבן',diff:'בינוני',desc:'אחזי משקל ביד, בצעי סקוואט עמוק.',emoji:'🤸'},
+  ],
+  pregnancy:[
+    {name:'הליכה בקצב נוח',sets:1,reps:'20-30 דקות',muscle:'כל הגוף',diff:'קל',desc:'הליכה בקצב שמאפשר לדבר בלי קוצר נשימה. עדיפות לשטח שטוח.',emoji:'🚶‍♀️',tip:'✅ בטוח בכל שלב ההריון',tipType:'safe'},
+    {name:'סקוואט עם כיסא',sets:3,reps:'10-12',muscle:'ישבן + רצפת האגן',diff:'קל',desc:'עמדי ברגליים ברוחב כתפיים, ברדת לסקוואט השעני קלות על כיסא. גב ישר, לא מעבר ל-90°.',emoji:'🧘‍♀️',tip:'✅ מחזק את רצפת האגן ומקל על לידה',tipType:'safe'},
+    {name:'Bird-Dog על הרצפה',sets:3,reps:'8 לכל צד',muscle:'גב תחתון + בטן עמוקה',diff:'קל',desc:'כרעי על ידיים וברכיים. הארכי יד ימין ורגל שמאל בו-זמנית, החזיקי 3 שניות, חזרי למרכז.',emoji:'🌸',tip:'✅ מצוין למניעת כאבי גב בהריון',tipType:'safe'},
+    {name:'גשר אגן שכוב',sets:3,reps:'12',muscle:'ישבן + גב תחתון',diff:'קל',desc:'שכבי על הגב, כפות הרגל על הרצפה, הרמי את האגן למעלה לאט, החזיקי 2 שניות, רדי לאט.',emoji:'🌿',tip:'⚠️ מתאים עד שבוע 20 בלבד. לאחר מכן — דלגי על תרגיל זה',tipType:'caution'},
+    {name:'Clamshell על הצד',sets:3,reps:'15 לכל צד',muscle:'ירכיים + רצפת האגן',diff:'קל',desc:'שכבי על הצד עם ברכיים כפופות ב-45°. הרמי את הברך העליונה כמו פתיחת צדפה. ירדי לאט.',emoji:'🕊️',tip:'✅ בטוח בכל שלבי ההריון',tipType:'safe'},
+    {name:'תרגילי קיגל',sets:3,reps:'10 כיווצים של 5 שניות',muscle:'רצפת האגן',diff:'קל',desc:'הדקי את שרירי רצפת האגן, החזיקי 5 שניות, שחררי לאט. ניתן לבצע בישיבה, שכיבה או עמידה.',emoji:'💧',tip:'✅ חיוני להכנה ללידה ולהתאוששות',tipType:'safe'},
+    {name:'מתיחת חזה בדלת',sets:3,reps:'30 שניות החזקה',muscle:'כתפיים + גב עליון',diff:'קל',desc:'עמדי בפתח דלת, הניחי אמות הידיים על המשקוף, הישעני קלות קדימה עד שתרגישי מתיחה.',emoji:'🌸',tip:'✅ מקל על כאבי גב עליון שנפוצים בהריון',tipType:'safe'},
+    {name:'שחייה / הליכה במים',sets:1,reps:'20-30 דקות',muscle:'כל הגוף',diff:'קל',desc:'שחייה בקצב נוח או הליכה בבריכה. המים תומכים במשקל הגוף ומפחיתים עומס על המפרקים.',emoji:'🏊‍♀️',tip:'✅ מומלץ במיוחד בשלבים מאוחרים',tipType:'safe'},
+  ]
+};
+
+const MEALS = {
+  weightloss:[
+    {time:'07:00',name:'ארוחת בוקר',foods:'חביתה מ-2 ביצים, ירקות קצוצים, 1 פרוסת לחם מלא',cal:350,icon:'🍳'},
+    {time:'10:00',name:'ארוחת ביניים',foods:'תפוח + 10 שקדים',cal:150,icon:'🍎'},
+    {time:'13:00',name:'ארוחת צהריים',foods:'חזה עוף/טופו 150 גרם, קינואה, סלט ירקות גדול',cal:500,icon:'🍗'},
+    {time:'16:00',name:'ארוחת ביניים',foods:'יוגורט יווני 0% + פירות יער',cal:200,icon:'🥛'},
+    {time:'19:00',name:'ארוחת ערב',foods:'דג אפוי, ברוקולי אפוי, בטטה קטנה',cal:400,icon:'🐟'},
+  ],
+  muscle:[
+    {time:'07:00',name:'ארוחת בוקר',foods:'שייק חלבון + 2 ביצים + שיבולת שועל עם בננה',cal:550,icon:'🍳'},
+    {time:'10:30',name:'ארוחת ביניים',foods:'גבינה 5% + לחם מלא + אבוקדו',cal:350,icon:'🥑'},
+    {time:'13:00',name:'ארוחת צהריים',foods:'חזה עוף 200 גרם, אורז מלא, ירקות מוקפצים',cal:600,icon:'🍗'},
+    {time:'16:00',name:'לפני אימון',foods:'בננה + 2 כפות חמאת בוטנים',cal:300,icon:'🍌'},
+    {time:'19:00',name:'אחרי אימון',foods:'שייק חלבון + פחמימה מהירה',cal:400,icon:'💪'},
+    {time:'21:00',name:'ארוחת לילה',foods:'גבינת קוטג\' + שקדים',cal:200,icon:'🌙'},
+  ]
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  step: 0, name:'', gender:'female', age:'', height:'', weight:'', fitness:'',
+  goals:[], medical:'', pregnant:false, timeAvail:'', hasEquip:false, diet:'',
+  weekDays:[true,true,false,false,false,false,false],
+  waterCups:3, currentWeight:65, workoutStarted:false, workoutElapsed:0,
+  mealEaten:[], timerInterval:null, restTimers:{}
+};
+
+const canNext = [
+  ()=>state.name.trim()!=='',
+  ()=>state.gender&&state.age&&state.height&&state.weight,
+  ()=>state.fitness!=='',
+  ()=>state.goals.length>0,
+  ()=>state.timeAvail!=='',
+  ()=>state.diet!=='',
+];
+
+// ── ONBOARDING LOGIC ──────────────────────────────────────────────────────────
+function checkStep(s){
+  if(s===0) state.name=document.getElementById('inp-name').value;
+  if(s===1){state.age=document.getElementById('inp-age').value;state.height=document.getElementById('inp-height').value;state.weight=document.getElementById('inp-weight').value;}
+  document.getElementById('ob-next').disabled=!canNext[state.step]();
+}
+function selectGender(g,el){
+  state.gender=g;
+  document.querySelectorAll('.gender-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  checkStep(1);
+}
+function selectFitness(f,el){
+  state.fitness=f;
+  document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ob-next').disabled=false;
+}
+function toggleGoal(g,el){
+  if(state.goals.includes(g)){state.goals=state.goals.filter(x=>x!==g);el.classList.remove('sel');}
+  else if(state.goals.length<3){state.goals.push(g);el.classList.add('sel');}
+  document.getElementById('ob-next').disabled=state.goals.length===0;
+}
+function togglePregnant(){
+  state.pregnant=!state.pregnant;
+  document.getElementById('toggle-pregnant').classList.toggle('on',state.pregnant);
+}
+function toggleEquip(){
+  state.hasEquip=!state.hasEquip;
+  document.getElementById('toggle-equip').classList.toggle('on',state.hasEquip);
+}
+function selectTime(t,el){
+  state.timeAvail=t;
+  document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ob-next').disabled=false;
+}
+function selectDiet(d,el){
+  state.diet=d;
+  document.querySelectorAll('.diet-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ob-next').disabled=false;
+}
+function nextStep(){
+  if(state.step===0) state.name=document.getElementById('inp-name').value;
+  if(state.step===4) state.medical=document.getElementById('inp-medical').value||'';
+  if(state.step<5){
+    state.step++;
+    updateOB();
+  } else {
+    launchApp();
+  }
+}
+function prevStep(){
+  if(state.step>0){state.step--;updateOB();}
+}
+function updateOB(){
+  document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-'+state.step).classList.add('active');
+  const pct=Math.round(((state.step+1)/6)*100);
+  document.getElementById('step-label').textContent=`שלב ${state.step+1} מתוך 6`;
+  document.getElementById('step-pct').textContent=pct+'%';
+  document.getElementById('ob-progress').style.width=pct+'%';
+  document.getElementById('ob-back').style.display=state.step>0?'block':'none';
+  const btn=document.getElementById('ob-next');
+  btn.textContent=state.step<5?'המשך ←':'🚀 בנה לי תוכנית!';
+  btn.disabled=!canNext[state.step]();
+}
+
+// ── LAUNCH APP ────────────────────────────────────────────────────────────────
+function launchApp(){
+  document.getElementById('onboarding').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  state.currentWeight=parseFloat(state.weight)||65;
+  state.mealEaten=[];
+  buildApp();
+}
+function resetApp(){
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('onboarding').classList.add('active');
+  state.step=0;state.goals=[];state.fitness='';state.diet='';state.timeAvail='';state.pregnant=false;
+  updateOB();
+}
+
+function buildApp(){
+  const first=state.name.split(' ')[0]||'שלום';
+  // topbar
+  document.getElementById('top-avatar').textContent=first[0];
+  // hero
+  document.getElementById('hero-name').textContent=first+' 👋';
+  const isPregnant=state.pregnant;
+  const primaryGoal=state.goals[0]||'weightloss';
+  const exList=isPregnant?EXERCISES.pregnancy:(EXERCISES[primaryGoal]||EXERCISES.strength);
+  document.getElementById('stat-exercises').textContent=exList.length;
+  const calTarget=isPregnant?2200:primaryGoal==='muscle'?2800:1800;
+  document.getElementById('stat-calories').textContent=calTarget;
+  document.getElementById('stat-workouts').textContent=state.timeAvail.split(' ')[0]||'3';
+  // week grid
+  buildWeekGrid();
+  // water
+  buildWater();
+  buildWaterNutrition();
+  // goals
+  const gt=document.getElementById('home-goals');
+  gt.innerHTML='';
+  state.goals.forEach(g=>{const d=document.createElement('span');d.className='goal-tag';d.textContent=GOALS_MAP[g]||g;gt.appendChild(d);});
+  // workout
+  buildWorkout();
+  // nutrition
+  buildNutrition();
+  // progress
+  document.getElementById('prog-weight').textContent=state.currentWeight;
+  document.getElementById('start-weight').textContent=state.weight;
+  const goalW=primaryGoal==='muscle'?parseFloat(state.weight)+3:parseFloat(state.weight)-5;
+  document.getElementById('goal-weight').textContent=goalW.toFixed(1);
+  document.getElementById('diff-weight').textContent='0';
+}
+
+function buildWeekGrid(){
+  const g=document.getElementById('week-grid');g.innerHTML='';
+  const days=['א','ב','ג','ד','ה','ו','ש'];
+  days.forEach((d,i)=>{
+    const el=document.createElement('div');el.className='week-day'+(state.weekDays[i]?' done':'');
+    el.innerHTML=`<span class="week-day-lbl">${d}</span><span class="week-day-check">✓</span>`;
+    el.onclick=()=>{state.weekDays[i]=!state.weekDays[i];buildWeekGrid();updateWeekCount();};
+    g.appendChild(el);
+  });
+  updateWeekCount();
+}
+function updateWeekCount(){
+  const c=state.weekDays.filter(Boolean).length;
+  document.getElementById('week-count').textContent=c+' / 7 אימונים';
+  const pct=Math.round((c/7)*100);
+  document.getElementById('perf-workouts-pct').textContent=pct+'%';
+  document.getElementById('perf-workouts-bar').style.width=pct+'%';
+}
+
+function buildWater(){
+  const w=document.getElementById('water-cups');w.innerHTML='';
+  for(let i=0;i<8;i++){
+    const b=document.createElement('button');b.className='water-cup'+(i<state.waterCups?' filled':'');
+    b.textContent='💧';b.onclick=()=>{state.waterCups=i+1;buildWater();buildWaterNutrition();};
+    w.appendChild(b);
+  }
+  document.getElementById('water-label').textContent=state.waterCups+'/8 כוסות';
+  document.getElementById('water-bar').style.width=(state.waterCups/8*100)+'%';
+}
+function buildWaterNutrition(){
+  const c=document.getElementById('nutrition-water');
+  c.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="font-weight:600;color:var(--text)">💧 מים</span><span style="color:var(--info);font-weight:700">${state.waterCups}/8 כוסות</span></div><div class="progress-wrap"><div class="progress-bar" style="width:${state.waterCups/8*100}%;background:var(--info)"></div></div><div class="water-cups" id="water-cups-2"></div>`;
+  const w2=document.getElementById('water-cups-2');
+  for(let i=0;i<8;i++){const b=document.createElement('button');b.className='water-cup'+(i<state.waterCups?' filled':'');b.textContent='💧';b.onclick=()=>{state.waterCups=i+1;buildWater();buildWaterNutrition();};w2.appendChild(b);}
+}
+
+function buildWorkout(){
+  const isPregnant=state.pregnant;
+  const primaryGoal=state.goals[0]||'weightloss';
+  const exList=isPregnant?EXERCISES.pregnancy:(EXERCISES[primaryGoal]||EXERCISES.strength);
+  document.getElementById('pregnancy-banner').style.display=isPregnant?'block':'none';
+  document.getElementById('workout-subtitle').textContent=(isPregnant?'🤰 תרגילים בטוחים להריון':(GOALS_MAP[primaryGoal]||'חיטוב כללי'))+' • '+exList.length+' תרגילים';
+  // chips
+  const chips=document.getElementById('workout-chips');chips.innerHTML='';
+  if(!isPregnant){['אימוני כוח','אימוני בית','חדר כושר','אירובי','חיטוב','גמישות'].forEach(t=>{const s=document.createElement('span');s.className='chip';s.textContent=t;chips.appendChild(s);});}
+  // exercises
+  const list=document.getElementById('exercises-list');list.innerHTML='';
+  exList.forEach((ex,i)=>{list.appendChild(buildExCard(ex,i,isPregnant));});
+  // medical
+  const mb=document.getElementById('medical-banner');
+  if(state.medical&&state.medical!=='ללא מגבלות'&&state.medical.trim()!==''){
+    mb.style.display='block';document.getElementById('medical-text').textContent='⚠️ תרגילים הותאמו למגבלה: '+state.medical;
+  } else {mb.style.display='none';}
+}
+
+function buildExCard(ex,i,isPregnant){
+  const diffColor=ex.diff==='קשה'?'var(--danger)':ex.diff==='קל'?'var(--accent)':'var(--info)';
+  const emojis=['🏋️','🤸','💪','🧘','🔥','⚡','🌸','🚶‍♀️'];
+  const pregEmojis=['🤸‍♀️','🧘‍♀️','🚶‍♀️','💧','🌸','🌿','🕊️','🏊‍♀️'];
+  const id='ex-'+i;
+  const div=document.createElement('div');div.className='ex-card';div.id=id;
+  let tipHtml='';
+  if(ex.tip){tipHtml=`<div class="ex-tip ${ex.tipType==='caution'?'caution':'safe'}">${ex.tip}</div>`;}
+  div.innerHTML=`
+    <div class="ex-done-overlay"></div>
+    ${tipHtml}
+    <div class="ex-body">
+      <div class="ex-emoji ${isPregnant?'pregnancy-style':''}">${isPregnant?pregEmojis[i%pregEmojis.length]:emojis[i%emojis.length]}</div>
+      <div class="ex-info">
+        <div class="ex-name-row">
+          <span class="ex-name">${ex.name}</span>
+          <span class="ex-diff" style="background:${diffColor}20;color:${diffColor}">${ex.diff}</span>
+        </div>
+        <div class="ex-desc">${ex.desc}</div>
+        <div class="ex-meta">
+          <span style="color:var(--accent)">🔁 ${ex.sets} סטים</span>
+          <span style="color:var(--info)">× ${ex.reps}</span>
+          <span style="color:var(--muted)">📍 ${ex.muscle}</span>
+        </div>
+      </div>
+    </div>
+    <div class="ex-btns">
+      <button class="ex-rest-btn" onclick="startRest('${id}')">⏱ מנוחה 60 שניות</button>
+      <button class="ex-done-btn" id="${id}-done" style="background:var(--accent);color:var(--bg)" onclick="toggleExDone('${id}')">סיימתי סט</button>
+    </div>
+    <div id="${id}-timer" style="display:none"></div>`;
+  return div;
+}
+
+function toggleExDone(id){
+  const card=document.getElementById(id);const btn=document.getElementById(id+'-done');
+  const isDone=card.classList.toggle('done');
+  btn.textContent=isDone?'✓ הושלם':'סיימתי סט';
+  btn.style.background=isDone?'var(--accent-soft)':'var(--accent)';
+  btn.style.color=isDone?'var(--accent)':'var(--bg)';
+}
+
+function startRest(id){
+  const timerDiv=document.getElementById(id+'-timer');
+  let left=60;timerDiv.style.display='block';
+  if(state.restTimers[id]) clearInterval(state.restTimers[id]);
+  const update=()=>{
+    const pct=(left/60)*100;
+    timerDiv.innerHTML=`<div class="rest-timer"><div style="position:relative;width:100px;height:100px;margin:0 auto 8px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="var(--border)" stroke-width="8"/><circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8" stroke-dasharray="${276*pct/100} 276" stroke-linecap="round" transform="rotate(-90 50 50)"/></svg><span class="rest-time">${left}</span></div><p style="color:var(--muted);font-size:14px">מנוחה בין סטים</p></div>`;
+  };
+  update();
+  state.restTimers[id]=setInterval(()=>{left--;if(left<=0){clearInterval(state.restTimers[id]);timerDiv.style.display='none';}else update();},1000);
+}
+
+let workoutInterval=null;
+function toggleWorkout(){
+  const btn=document.getElementById('start-btn');const timer=document.getElementById('workout-timer');
+  if(!state.workoutStarted){
+    state.workoutStarted=true;state.workoutElapsed=0;
+    btn.textContent='⏸ השהה אימון';btn.style.background='var(--danger)';btn.style.color='#fff';
+    timer.style.display='block';
+    workoutInterval=setInterval(()=>{state.workoutElapsed++;const m=Math.floor(state.workoutElapsed/60);const s=state.workoutElapsed%60;timer.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');},1000);
+  } else {
+    state.workoutStarted=false;clearInterval(workoutInterval);
+    btn.textContent='▶ התחל אימון';btn.style.background='var(--accent)';btn.style.color='var(--bg)';
+    timer.style.display='none';
+  }
+}
+
+function buildNutrition(){
+  const primaryGoal=state.goals[0]||'weightloss';
+  const mealList=primaryGoal==='muscle'?MEALS.muscle:MEALS.weightloss;
+  const calTarget=state.pregnant?2200:primaryGoal==='muscle'?2800:1800;
+  document.getElementById('calorie-target-lbl').textContent='מתוך '+calTarget;
+  state.mealEaten=mealList.map(()=>false);
+  const list=document.getElementById('meals-list');list.innerHTML='';
+  mealList.forEach((m,i)=>{
+    const div=document.createElement('div');div.className='meal-card';div.id='meal-'+i;
+    div.innerHTML=`<div class="meal-icon">${m.icon}</div><div class="meal-info"><div class="meal-name-row"><span class="meal-name">${m.name}</span><span class="meal-time">${m.time}</span></div><div class="meal-foods">${m.foods}</div><span class="meal-cal">~${m.cal} קל׳</span></div><span class="meal-check">✓</span>`;
+    div.onclick=()=>{state.mealEaten[i]=!state.mealEaten[i];div.classList.toggle('eaten',state.mealEaten[i]);updateCalories(mealList,calTarget);};
+    list.appendChild(div);
+  });
+  updateCalories(mealList,calTarget);
+}
+function updateCalories(mealList,calTarget){
+  const consumed=mealList.reduce((s,m,i)=>s+(state.mealEaten[i]?m.cal:0),0);
+  document.getElementById('calorie-consumed').textContent=consumed;
+  const pct=Math.min(consumed/calTarget,1);
+  document.getElementById('calorie-circle').setAttribute('stroke-dasharray',`${364*pct} 364`);
+}
+
+function changeWeight(delta){
+  state.currentWeight=Math.max(30,+(state.currentWeight+delta).toFixed(1));
+  document.getElementById('prog-weight').textContent=state.currentWeight;
+  const diff=+(state.currentWeight-parseFloat(state.weight)).toFixed(1);
+  const diffEl=document.getElementById('diff-weight');
+  diffEl.textContent=(diff>0?'+':'')+diff+' ק"ג';
+  diffEl.style.color=diff<0?'var(--green)':diff>0?'var(--danger)':'var(--text)';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(tab){
+  ['home','workout','nutrition','progress'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+}
+</script>
+</body>
+</html>
